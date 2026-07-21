@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+server/storage/videos/*
+server/storage/temp/*
+server/storage/audio/*
+server/storage/images/*
+!server/storage/videos/.gitkeep
+!server/storage/temp/.gitkeep
+!server/storage/audio/.gitkeep
+!server/storage/images/.gitkeep
+.vite/
+coverage/
