@@ -12,7 +12,12 @@ function headers() {
   if (!config.pexelsApiKey) {
     throw new Error('PEXELS_API_KEY가 설정되지 않았습니다.');
   }
-  return { Authorization: config.pexelsApiKey };
+  return {
+    Authorization: config.pexelsApiKey,
+    // Cloudflare(Pexels edge) may block requests without a User-Agent (error 1010)
+    'User-Agent': 'ShortsAutomator/1.0',
+    Accept: 'application/json',
+  };
 }
 
 export async function searchPhotos(query, perPage = 5) {
