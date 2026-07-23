@@ -40,7 +40,7 @@ cp .env.example .env
 | `PEXELS_API_KEY` | Pexels 키 |
 | `YOUTUBE_CLIENT_ID` / `YOUTUBE_CLIENT_SECRET` | Google OAuth |
 | `YOUTUBE_REDIRECT_URI` | 기본 `http://localhost:4000/api/youtube/oauth/callback` |
-| `CLIENT_URL` | 프론트 주소 (`http://localhost:5173`) |
+| `CLIENT_URL` | 프론트 주소 (`http://localhost:8000`) |
 
 3. Google Cloud Console에서 OAuth 리다이렉트 URI에 위 `YOUTUBE_REDIRECT_URI`를 등록하고, YouTube Data API v3를 활성화합니다.
 
@@ -53,7 +53,7 @@ npm run install:all
 # MongoDB가 떠 있어야 합니다.
 # 예: mongod --dbpath /data/db --fork --logpath /tmp/mongod.log
 
-# 개발 서버 (API :4000, Web :5173)
+# 개발 서버 (API :4000, Web :8000)
 npm run dev
 ```
 
@@ -64,7 +64,7 @@ npm run dev:server
 npm run dev:client
 ```
 
-브라우저에서 `http://localhost:5173` 접속 → 회원가입/로그인 → 설정에서 YouTube 연결 → 새 작업 시작.
+브라우저에서 `http://localhost:8000` 접속 → 회원가입/로그인 → 설정에서 YouTube 연결 → 새 작업 시작.
 
 ## 워크플로
 

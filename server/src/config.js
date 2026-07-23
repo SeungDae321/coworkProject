@@ -10,7 +10,7 @@ export const config = {
   port: Number(process.env.PORT) || 4000,
   mongoUri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shorts-automator',
   jwtSecret: process.env.JWT_SECRET || 'dev-jwt-secret-change-me',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:8000',
   tokenEncryptionKey: process.env.TOKEN_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   pexelsApiKey: process.env.PEXELS_API_KEY || '',
