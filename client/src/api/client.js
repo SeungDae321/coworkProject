@@ -13,24 +13,25 @@ export function clearToken() {
 }
 
 export async function api(path, options = {}) {
+  const { timeoutMs = 15000, body, headers: extraHeaders, signal, ...rest } = options;
   const headers = {
     'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(extraHeaders || {}),
   };
 
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const timeoutMs = options.timeoutMs ?? 15000;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(path, {
-      ...options,
+      ...rest,
+      method: options.method || (body ? 'POST' : 'GET'),
       headers,
-      signal: options.signal || controller.signal,
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: signal || controller.signal,
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     const data = await res.json().catch(() => ({}));

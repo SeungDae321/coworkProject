@@ -11,3 +11,13 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Simple Browser에서 모듈 로드 실패 시에도 글자가 보이게 */
+#root:empty::before {
+  content: '화면을 불러오지 못했습니다. 새로고침 해주세요.';
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+}
