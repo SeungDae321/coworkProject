@@ -63,32 +63,55 @@ candidates는 정확히 5개여야 합니다.`,
 
 export async function generateScript(topic) {
   const openai = getClient();
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    temperature: 0.8,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content: `당신은 YouTube Shorts용 한국어 나레이션 작가입니다.
-TTS로 읽을 스크립트를 작성하세요. 목표 길이는 말하기 기준 약 45~60초입니다.
+
+  async function requestOnce(extraInstruction = '') {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.8,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content: `당신은 YouTube Shorts용 한국어 나레이션 작가입니다.
+TTS로 읽을 스크립트를 작성하세요.
+목표 길이: 말하기 기준 약 45~60초.
+분량: 공백 제외 한국어 글자 수 약 450~650자 (최소 400자 이상).
 구조: 강한 후킹(1~2문장) → 본문 핵심 3~4포인트 → 짧은 CTA.
-문장은 짧고 말하기 편하게. 이모지/해시태그/무대지시 금지.
+문장은 짧고 말하기 편하게. 이모지/해시태그/무대 지시 금지.
 JSON만 응답:
 { "script": "전체 스크립트 문자열", "estimatedSeconds": 55 }`,
-      },
-      {
-        role: 'user',
-        content: `주제 제목: ${topic.title}\n주제 설명: ${topic.description || ''}`,
-      },
-    ],
-  });
+        },
+        {
+          role: 'user',
+          content: `주제 제목: ${topic.title}\n주제 설명: ${topic.description || ''}${
+            extraInstruction ? `\n\n추가 요청: ${extraInstruction}` : ''
+          }`,
+        },
+      ],
+    });
 
-  const data = parseJsonContent(response.choices[0].message.content);
-  if (!data.script) throw new Error('스크립트 생성에 실패했습니다.');
+    const data = parseJsonContent(response.choices[0].message.content);
+    if (!data.script) throw new Error('스크립트 생성에 실패했습니다.');
+    const script = String(data.script).trim();
+    const charCount = script.replace(/\s/g, '').length;
+    return {
+      script,
+      estimatedSeconds: Number(data.estimatedSeconds) || 55,
+      charCount,
+    };
+  }
+
+  let result = await requestOnce();
+  // Too short for a ~45s Short — regenerate once
+  if (result.charCount < 250) {
+    result = await requestOnce(
+      '이전 결과가 너무 짧았습니다. 공백 제외 450자 이상으로 더 길고 구체적인 나레이션을 작성하세요.'
+    );
+  }
+
   return {
-    script: String(data.script).trim(),
-    estimatedSeconds: Number(data.estimatedSeconds) || 55,
+    script: result.script,
+    estimatedSeconds: result.estimatedSeconds,
   };
 }
 
