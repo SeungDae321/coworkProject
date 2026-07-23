@@ -21,20 +21,34 @@ export async function api(path, options = {}) {
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(path, {
-    ...options,
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  const timeoutMs = options.timeoutMs ?? 15000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(data.error || '요청에 실패했습니다.');
-    error.status = res.status;
-    error.data = data;
-    throw error;
+  try {
+    const res = await fetch(path, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(data.error || '요청에 실패했습니다.');
+      error.status = res.status;
+      error.data = data;
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      throw new Error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  return data;
 }
 
 export function videoUrlWithToken(videoUrl) {

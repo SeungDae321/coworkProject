@@ -13,13 +13,21 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
-    api('/api/auth/me')
-      .then(setUser)
+    let cancelled = false;
+    api('/api/auth/me', { timeoutMs: 8000 })
+      .then((me) => {
+        if (!cancelled) setUser(me);
+      })
       .catch(() => {
         clearToken();
-        setUser(null);
+        if (!cancelled) setUser(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const value = useMemo(
