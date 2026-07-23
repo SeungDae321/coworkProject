@@ -62,6 +62,13 @@ const projectSchema = new mongoose.Schema(
       pexelsIds: [String],
       audioPath: String,
       durationSec: Number,
+      scenes: [
+        {
+          query: String,
+          caption: String,
+          pexelsId: String,
+        },
+      ],
     },
   },
   { timestamps: true }

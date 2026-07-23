@@ -92,6 +92,60 @@ JSON만 응답:
   };
 }
 
+/**
+ * Split an approved Shorts script into 4–6 visual scene search queries for Pexels.
+ */
+export async function extractSceneSearchQueries(script, topicTitle = '') {
+  const openai = getClient();
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    temperature: 0.4,
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: `당신은 스톡 이미지 검색 전문가입니다.
+한국어 YouTube Shorts 나레이션 스크립트를 읽고, Pexels에서 찾을 수 있는
+구체적인 시각 장면으로 나눕니다.
+
+규칙:
+- 장면 수는 4개 이상 6개 이하
+- query는 영어 스톡포토 검색어 (2~6단어, 구체적 시각 묘사)
+- 추상적 단어(success, happiness) 대신 눈에 보이는 것
+  (예: morning coffee kitchen sunlight, person jogging park sunrise)
+- caption은 해당 장면을 한 줄로 요약한 한국어
+- 스크립트 흐름 순서 유지
+
+JSON만 응답:
+{
+  "scenes": [
+    { "query": "english stock keywords", "caption": "한국어 요약" }
+  ]
+}`,
+      },
+      {
+        role: 'user',
+        content: `주제: ${topicTitle || '(없음)'}\n\n스크립트:\n${script}`,
+      },
+    ],
+  });
+
+  const data = parseJsonContent(response.choices[0].message.content);
+  const scenes = Array.isArray(data.scenes) ? data.scenes : [];
+  const normalized = scenes
+    .map((s) => ({
+      query: String(s?.query || '').trim(),
+      caption: String(s?.caption || '').trim(),
+    }))
+    .filter((s) => s.query);
+
+  if (normalized.length < 4) {
+    throw new Error('장면 키워드 추출에 실패했습니다. (4개 미만)');
+  }
+
+  return normalized.slice(0, 6);
+}
+
 export async function generateTts(scriptText, outputPath) {
   const openai = getClient();
   const speech = await openai.audio.speech.create({

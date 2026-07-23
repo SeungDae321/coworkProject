@@ -4,8 +4,8 @@ import { Job, JOB_STATUS, JOB_TYPES } from '../models/Job.js';
 import { Project, PROJECT_STATUS } from '../models/Project.js';
 import { User } from '../models/User.js';
 import { config } from '../config.js';
-import { generateTtsFallback } from '../services/openai.js';
-import { fetchBackgroundAssets } from '../services/pexels.js';
+import { generateTtsFallback, extractSceneSearchQueries } from '../services/openai.js';
+import { fetchAssetsForScenes } from '../services/pexels.js';
 import { composeShortsVideo, ensureFfmpegAvailable } from '../services/ffmpeg.js';
 import { uploadShortsVideo } from '../services/youtube.js';
 
@@ -46,14 +46,31 @@ async function processRenderJob(job) {
 
   fs.mkdirSync(workDir, { recursive: true });
 
-  await updateJob(job._id, { progress: 15, message: '배경 이미지 다운로드 중...' });
-  const query =
+  const fallbackQuery =
     project.selectedTopic?.title ||
     project.correctedKeyword ||
     project.keyword;
-  const assets = await fetchBackgroundAssets(query, imagesDir, 4);
 
-  await updateJob(job._id, { progress: 40, message: 'TTS 음성 생성 중...' });
+  await updateJob(job._id, {
+    progress: 15,
+    message: '스크립트 장면 키워드 추출 중...',
+  });
+  const scenes = await extractSceneSearchQueries(
+    script,
+    project.selectedTopic?.title || fallbackQuery
+  );
+
+  await updateJob(job._id, {
+    progress: 25,
+    message: '장면별 배경 이미지 다운로드 중...',
+  });
+  const { assets, scenes: sceneMeta } = await fetchAssetsForScenes(
+    scenes,
+    imagesDir,
+    fallbackQuery
+  );
+
+  await updateJob(job._id, { progress: 45, message: 'TTS 음성 생성 중...' });
   await generateTtsFallback(script, audioPath);
 
   await updateJob(job._id, { progress: 65, message: '영상 합성 중 (FFmpeg)...' });
@@ -71,6 +88,11 @@ async function processRenderJob(job) {
     pexelsIds: assets.map((a) => a.pexelsId),
     audioPath,
     durationSec: duration,
+    scenes: sceneMeta.map((s) => ({
+      query: s.query,
+      caption: s.caption,
+      pexelsId: s.pexelsId,
+    })),
   };
   project.status = PROJECT_STATUS.VIDEO_READY;
   await project.save();

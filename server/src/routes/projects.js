@@ -28,6 +28,7 @@ function serializeProject(project) {
       ? {
           durationSec: project.mediaMeta.durationSec,
           pexelsIds: project.mediaMeta.pexelsIds,
+          scenes: project.mediaMeta.scenes || [],
         }
       : null,
     createdAt: project.createdAt,
